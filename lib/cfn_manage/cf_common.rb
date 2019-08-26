@@ -4,12 +4,12 @@ module CfnManage
 
     class Common
 
-      def self.visit_stack(cf_client, stack_name, handler, visit_substacks)
+      def self.visit_stack(cf_client, stack_name, handler, visit_substacks, only_include)
         stack_resources = cf_client.describe_stack_resources(stack_name: stack_name)
         stack = cf_client.describe_stacks(stack_name: stack_name)
 
         # call traverse handler for parent stack
-        handler.call(stack['stacks'][0].stack_name)
+        handler.call(stack['stacks'][0].stack_name, only_include)
 
         # do not traverse unless instructed
         return unless visit_substacks
@@ -19,7 +19,7 @@ module CfnManage
           if resource['resource_type'] == 'AWS::CloudFormation::Stack'
             # call recursively
             substack_name = resource['physical_resource_id'].split('/')[1]
-            self.visit_stack(cf_client, substack_name, handler, visit_substacks)
+            self.visit_stack(cf_client, substack_name, handler, visit_substacks, only_include)
           end
         end
       end

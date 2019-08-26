@@ -50,6 +50,15 @@ module CfnManage
         @skip_wait = (ENV.key?('SKIP_WAIT') and ENV['SKIP_WAIT'] == '1')
         @wait_async = (ENV.key?('WAIT_ASYNC') and ENV['WAIT_ASYNC'] == '1')
         @continue_on_error = (ENV.key? 'CFN_CONTINUE_ON_ERROR' and ENV['CFN_CONTINUE_ON_ERROR'] == '1')
+
+        if ENV.key?('ONLY_INCLUDE')
+          @only_include = ENV['ONLY_INCLUDE']
+          if !@only_include or !@@resource_start_priorities.keys().include?(@only_include)
+            $log.error("The value provided to '--only-include' must be one of:\n #{@@resource_start_priorities.keys().sort().join("\n ")}")
+            exit(1)
+          end
+        end
+
       rescue NoMethodError => e
         puts "Got No Method Error on CloudFormation::initialize, this often means that you're missing a AWS_DEFAULT_REGION"
       rescue Aws::Sigv4::Errors::MissingCredentialsError => e
@@ -58,8 +67,13 @@ module CfnManage
 
 
       def start_environment(stack_name)
+        if !stack_name
+          $log.error("A stack name must be specified using '--stack-name'.")
+          exit(1)
+        end
+
         $log.info("Starting environment #{stack_name}")
-        Common.visit_stack(@cf_client, stack_name, method(:collect_resources), true)
+        Common.visit_stack(@cf_client, stack_name, method(:collect_resources), true, @only_include)
         do_start_assets
         configuration = { stack_running: true }
         save_item_configuration("environment_data/stack-#{stack_name}", configuration) unless @dry_run
@@ -68,8 +82,13 @@ module CfnManage
 
 
       def stop_environment(stack_name)
+        if !stack_name
+          $log.error("A stack name must be specified using '--stack-name'.")
+          exit(1)
+        end
+
         $log.info("Stopping environment #{stack_name}")
-        Common.visit_stack(@cf_client, stack_name, method(:collect_resources), true)
+        Common.visit_stack(@cf_client, stack_name, method(:collect_resources), true, @only_include)
         do_stop_assets
         configuration = { stack_running: false }
         save_item_configuration("environment_data/stack-#{stack_name}", configuration) unless @dry_run
@@ -204,10 +223,15 @@ module CfnManage
         end
       end
 
-      def collect_resources(stack_name)
-        resrouces = @cf_client.describe_stack_resources(stack_name: stack_name)
-        resrouces['stack_resources'].each do |resource|
+      def collect_resources(stack_name, only_include)
+        resources = @cf_client.describe_stack_resources(stack_name: stack_name)
+        resources['stack_resources'].each do |resource|
           start_stop_handler = nil
+          if only_include and resource['resource_type'] != only_include
+            #$log.debug("Skipping resource '#{resource['physical_resource_id']}'")
+            next
+          end
+
           begin
             start_stop_handler = CfnManage::StartStopHandlerFactory.get_start_stop_handler(
                 resource['resource_type'],

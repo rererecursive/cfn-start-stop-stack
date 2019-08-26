@@ -111,6 +111,10 @@ OptionParser.new do |opts|
     ENV['ASG_SUSPEND_TERMINATION'] = '1'
   end
 
+  opts.on('--only-include [ONLY]') do |only|
+    ENV['ONLY_INCLUDE'] = only
+  end
+
 end.parse!
 
 command = ARGV[0]
@@ -152,7 +156,7 @@ when 'stop-transfer-server'
   CfnManage::CloudFormation::EnvironmentRunStop.new().stop_resource($options['TRANSFER_SERVER_ID'],'AWS::Transfer::Server')
 when 'start-transfer-server'
   CfnManage::CloudFormation::EnvironmentRunStop.new().start_resource($options['TRANSFER_SERVER_ID'],'AWS::Transfer::Server')
-      
+
   # ec2 instance
   when 'stop-ec2'
     CfnManage::CloudFormation::EnvironmentRunStop.new().stop_resource($options['EC2_INSTANCE_ID'],'AWS::EC2::Instance')
@@ -183,4 +187,8 @@ when 'start-transfer-server'
     CfnManage::CloudFormation::EnvironmentRunStop.new().stop_environment($options['STACK_NAME'])
   when 'start-environment'
     CfnManage::CloudFormation::EnvironmentRunStop.new().start_environment($options['STACK_NAME'])
+
+  else
+    puts "Unrecognised command: #{command}"
+    print_usage_exit(-1)
 end
