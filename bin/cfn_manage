@@ -111,6 +111,15 @@ OptionParser.new do |opts|
     ENV['ASG_SUSPEND_TERMINATION'] = '1'
   end
 
+  opts.on('--log-level [LEVEL]') do |level|
+    levels = %w[debug info warn error fatal].freeze
+    if !levels.include?(level)
+      STDERR.puts("ERROR - the argument to --log-level must be one of: #{levels.join(' | ')}")
+      exit 1
+    end
+    $log.level = levels.index(level)
+  end
+
 end.parse!
 
 command = ARGV[0]
@@ -152,7 +161,7 @@ when 'stop-transfer-server'
   CfnManage::CloudFormation::EnvironmentRunStop.new().stop_resource($options['TRANSFER_SERVER_ID'],'AWS::Transfer::Server')
 when 'start-transfer-server'
   CfnManage::CloudFormation::EnvironmentRunStop.new().start_resource($options['TRANSFER_SERVER_ID'],'AWS::Transfer::Server')
-      
+
   # ec2 instance
   when 'stop-ec2'
     CfnManage::CloudFormation::EnvironmentRunStop.new().stop_resource($options['EC2_INSTANCE_ID'],'AWS::EC2::Instance')
