@@ -228,6 +228,8 @@ module CfnManage
                     $log.info("Starting resource: #{resource.id}")
                     @resource_controller.start(resource)
 
+                    puts "#{resource} - #{resource.execution_state}"
+
                     if resource.execution_state >= ExecutionStates::Starting
                       ready_count += 1
                     end
@@ -241,6 +243,10 @@ module CfnManage
                     end
                   end
                 end
+
+                puts ready_count
+                puts resource_count
+                exit 1
 
                 # Check if we can move to the next state
                 if ready_count == resource_count
