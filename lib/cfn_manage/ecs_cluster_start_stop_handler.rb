@@ -22,6 +22,8 @@ module CfnManage
     end
 
     def start(resource, run_configuration)
+      return true if run_configuration[:dry_run]
+
       configuration = resource.configuration
       service_arns = []
 
@@ -49,7 +51,6 @@ module CfnManage
         end
 
         $log.info("Starting ECS service #{service.service_name} with desired count of #{desired_count}")
-        return true if run_configuration[:dry_run]
 
         @ecs_client.update_service({
           desired_count: desired_count,

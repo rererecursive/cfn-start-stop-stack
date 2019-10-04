@@ -22,6 +22,8 @@ module CfnManage
     end
 
     def start(resource, run_configuration)
+      return true if run_configuration[:dry_run]
+
       instance = @ec2_resource.instance(resource.id)
 
       case

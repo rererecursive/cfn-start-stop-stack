@@ -12,6 +12,8 @@ module CfnManage
     end
 
     def start(resource, run_configuration)
+      return true if run_configuration[:dry_run]
+
       alarm = @cw_resource.alarm(resource.id)
 
       if alarm.actions_enabled
@@ -20,13 +22,14 @@ module CfnManage
       end
 
       $log.info("Enabling alarm #{alarm.alarm_arn}")
-      return true if run_configuration[:dry_run]
 
       alarm.enable_actions({})
       return true
     end
 
     def stop
+      return true if run_configuration[:dry_run]
+
       alarm = @cw_resource.alarm(resource.id)
 
       if not alarm.actions_enabled
@@ -35,7 +38,6 @@ module CfnManage
       end
 
       $log.info("Disabling actions on alarm #{alarm.alarm_arn}")
-      return true if run_configuration[:dry_run]
       alarm.disable_actions({})
       return true
     end
