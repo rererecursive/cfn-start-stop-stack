@@ -1,10 +1,11 @@
 require 'cfn_manage/aws_credentials'
+require 'cfn_manage/abstract_start_stop_handler'
 
 module CfnManage
 
-  class AuroraClusterStartStopHandler
+  class AuroraClusterStartStopHandler < AbstractStartStopHandler
 
-    def initialize(cluster_id, skip_wait)
+    def initialize(credentials)
       @cluster_id = cluster_id
       @skip_wait = skip_wait
       credentials = CfnManage::AWSCredentials.get_session_credentials("startstopcluster_#{cluster_id}")

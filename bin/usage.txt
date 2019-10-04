@@ -83,12 +83,6 @@ General options:
 
     Skips waiting for resources to achieve stopped or started states.
 
---wait-async
-
-    Default wait action is to wait for each individual resource to be stopped and started before continuing.
-    This will enabled waiting for resources in groups based on priority. Option only useful when used with
-    start-environment and stop-environment commands.
-
 --ignore-missing-ecs-config
 
     This option is required for starting a ecs service that was stopped outside of cfn_manage.
@@ -96,3 +90,19 @@ General options:
 --asg-suspend-termination
 
     Will stop instances in the autoscaling group(s) instead of the default behaviour of termination.
+
+--log-level
+
+    Sets the logging level. Valid options: [debug | info | warn | error | fatal]. Default: info
+
+--to-file
+
+    Save the contents of the stack resources to a file.
+
+--from-file
+
+    Load the contents of a stack from a file.
+
+--config
+
+    Load runtime configuration, such as dependencies, from a file.

@@ -1,42 +1,43 @@
 require 'cfn_manage/aws_credentials'
+require 'cfn_manage/abstract_start_stop_handler'
 
 module CfnManage
 
-  class AlarmStartStopHandler
+  class AlarmStartStopHandler < AbstractStartStopHandler
 
-    def initialize(alarm_name)
-      @alarm_id = alarm_name
-      credentials = CfnManage::AWSCredentials.get_session_credentials("startstopalarm_#{@asg_name}")
-      @cwclient = Aws::CloudWatch::Client.new(retry_limit: 20)
-      if credentials != nil
-        @cwclient = Aws::CloudWatch::Client.new(credentials: credentials, retry_limit: 20)
-      end
-
-      @cwresource = Aws::CloudWatch::Resource.new(client: @cwclient)
-      @alarm = @cwresource.alarm(alarm_name)
+    def initialize(credentials)
+      params = {retry_limit: 20, credentials: credentials}
+      @cw_client = Aws::CloudWatch::Client.new(params)
+      @cw_resource = Aws::CloudWatch::Resource.new(client: @cw_client)
     end
 
-    def start(configuration)
-      if @alarm.actions_enabled
-        $log.info("Alarm #{@alarm.alarm_arn} actions already enabled")
+    def start(resource, run_configuration)
+      alarm = @cw_resource.alarm(resource.id)
+
+      if alarm.actions_enabled
+        $log.info("Alarm #{alarm.alarm_arn} actions already enabled")
         return
       end
-      $log.info("Enabling alarm #{@alarm.alarm_arn}")
-      @alarm.enable_actions({})
+
+      $log.info("Enabling alarm #{alarm.alarm_arn}")
+      return true if run_configuration[:dry_run]
+
+      alarm.enable_actions({})
+      return true
     end
 
     def stop
-      if not @alarm.actions_enabled
-        $log.info("Alarm #{@alarm.alarm_arn} actions already disabled")
-        return {}
-      end
-      $log.info("Disabling actions on alarm #{@alarm.alarm_arn}")
-      @alarm.disable_actions({})
-      return {}
-    end
+      alarm = @cw_resource.alarm(resource.id)
 
-    def wait(wait_states=[])
-      $log.debug("Not waiting for alarm #{@alarm_id}")
+      if not alarm.actions_enabled
+        $log.info("Alarm #{alarm.alarm_arn} actions already disabled")
+        return true
+      end
+
+      $log.info("Disabling actions on alarm #{alarm.alarm_arn}")
+      return true if run_configuration[:dry_run]
+      alarm.disable_actions({})
+      return true
     end
 
   end

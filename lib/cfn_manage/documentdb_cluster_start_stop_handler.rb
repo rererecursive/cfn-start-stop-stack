@@ -4,16 +4,34 @@ module CfnManage
 
   class DocumentDbClusterStartStopHandler
 
-    def initialize(cluster_id, skip_wait)
-      @cluster_id = cluster_id
-      @skip_wait = skip_wait
-      credentials = CfnManage::AWSCredentials.get_session_credentials("startstopcluster_#{cluster_id}")
+    # def initialize(cluster_id, skip_wait)
+    #   @cluster_id = cluster_id
+    #   @skip_wait = skip_wait
+    #   credentials = CfnManage::AWSCredentials.get_session_credentials("startstopcluster_#{cluster_id}")
+    #   @docdb_client = Aws::DocDB::Client.new(retry_limit: 20)
+    #   if credentials != nil
+    #     @docdb_client = Aws::DocDB::Client.new(credentials: credentials, retry_limit: 20)
+    #   end
+    #   cluster = @docdb_client.describe_db_clusters({ db_cluster_identifier: @cluster_id })
+    #   @docdb_cluster = cluster.db_clusters.first
+    # end
+
+    def initialize(credentials)
+      params = {retry_limit: 20, credentials: credentials}
       @docdb_client = Aws::DocDB::Client.new(retry_limit: 20)
-      if credentials != nil
-        @docdb_client = Aws::DocDB::Client.new(credentials: credentials, retry_limit: 20)
+    end
+
+    def start(resource, run_configuration)
+      return true if run_configuration[:dry_run]
+
+      cluster = @docdb_client.describe_db_clusters({ db_cluster_identifier: resource.id })
+      docdb_cluster = cluster.db_clusters.first
+
+      if docdb_cluster.status == 'available'
+        $log.info("DocDB Cluster #{@cluster_id} is already in available state")
+        return
       end
-      cluster = @docdb_client.describe_db_clusters({ db_cluster_identifier: @cluster_id })
-      @docdb_cluster = cluster.db_clusters.first
+
     end
 
     def start(configuration)

@@ -1,0 +1,36 @@
+dependencies:
+  mssql:
+    stack: MSSQLStack
+    resource: MssqlInstance
+
+  aurora:
+    stack: RDSAurora2Stack
+    resource: DBClusterInstance1
+
+  adp:
+    stack: ADPStack
+    resource: AdpASG
+    depends_on:
+      - mssql
+      - rabbitmq_cluster
+
+  rabbitmq_instance:
+    stack: RabbitECSStack
+    resource: AutoScaleGroup0
+
+  rabbitmq_cluster:
+    stack: RabbitECSStack
+    resource: ECSCluster
+    depends_on:
+      - rabbitmq_instance
+
+# start_priorities:
+#   AWS::RDS::DBInstance: 100
+#   AWS::RDS::DBCluster: 100
+#   AWS::DocDB::DBCluster: 100
+#   AWS::AutoScaling::AutoScalingGroup: 200
+#   AWS::EC2::Instance: 200
+#   AWS::EC2::SpotFleet: 200
+#   AWS::Transfer::Server: 200
+#   AWS::ECS::Cluster: 250
+#   AWS::CloudWatch::Alarm: 300
